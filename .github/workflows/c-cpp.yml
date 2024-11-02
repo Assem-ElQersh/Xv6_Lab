@@ -1,0 +1,58 @@
+name: xv6 Lab Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up C/C++ Compiler
+        uses: actions/setup-cpp@v1
+        with:
+          compiler: gcc
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make gcc-riscv64-unknown-elf qemu-system-misc
+
+      - name: Build xv6 Kernel
+        run: |
+          make clean
+          make qemu
+
+      - name: Run Tests
+        run: |
+          # Run each test and collect results; replace `test1`, `test2` with the actual tests
+          make grade
+        continue-on-error: true
+
+      - name: Check Results
+        run: |
+          if grep -q "FAIL" grade.log; then
+            echo "One or more tests failed."
+            exit 1
+          else
+            echo "All tests passed!"
+          fi
+
+      - name: Generate Zip for Submission
+        run: make zipball
+        continue-on-error: true
+        outputs:
+          artifact_path: ${{ steps.generate_zipball.outputs.filepath }}
+
+      - name: Upload Artifact
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: xv6-lab-submission
+          path: lab.zip
