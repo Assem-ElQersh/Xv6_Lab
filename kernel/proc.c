@@ -274,8 +274,6 @@ growproc(int n)
   return 0;
 }
 
-// Create a new process, copying the parent.
-// Sets up child kernel stack to return as if from fork() system call.
 int
 fork(void)
 {
@@ -287,6 +285,9 @@ fork(void)
   if((np = allocproc()) == 0){
     return -1;
   }
+
+  // Inherit parent's trace mask after np is allocated.
+  np->trace_mask = p->trace_mask;
 
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
@@ -324,6 +325,7 @@ fork(void)
 
   return pid;
 }
+
 
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.

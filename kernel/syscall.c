@@ -128,20 +128,23 @@ static uint64 (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 };
 
-void
-syscall(void)
-{
-  int num;
-  struct proc *p = myproc();
+static char *syscall_names[] = {
+    "fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat",
+    "chdir", "dup", "getpid", "sbrk", "sleep", "uptime", "open", "write",
+    "mknod", "unlink", "link", "mkdir", "close", "trace"
+};
 
-  num = p->trapframe->a7;
-  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    // Use num to lookup the system call function for num, call it,
-    // and store its return value in p->trapframe->a0
-    p->trapframe->a0 = syscalls[num]();
-  } else {
-    printf("%d %s: unknown sys call %d\n",
-            p->pid, p->name, num);
-    p->trapframe->a0 = -1;
-  }
+void syscall(void) {
+    int num = myproc()->trapframe->a7;  // System call number
+    struct proc *p = myproc();
+
+    if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+        p->trapframe->a0 = syscalls[num]();  // Execute system call
+        
+        // Trace system call if bitmask is set
+        if (p->trace_mask & (1 << num)) {    // Check if tracing is enabled for this syscall
+            printf("%d: syscall %s -> %ld\n", p->pid, syscall_names[num], p->trapframe->a0);
+        }
+    }
 }
+
