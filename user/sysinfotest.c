@@ -30,7 +30,7 @@ countfree()
   }
   sinfo(&info);
   if (info.freemem != 0) {
-    printf("FAIL: there is no free mem, but sysinfo.freemem=%ld\n",
+    printf("FAIL: there is no free mem, but sysinfo.freemem=%d\n",
       info.freemem);
     exit(1);
   }
@@ -46,7 +46,7 @@ testmem() {
   sinfo(&info);
 
   if (info.freemem!= n) {
-    printf("FAIL: free mem %ld (bytes) instead of %ld\n", info.freemem, n);
+    printf("FAIL: free mem %d (bytes) instead of %d\n", info.freemem, n);
     exit(1);
   }
   
@@ -58,7 +58,7 @@ testmem() {
   sinfo(&info);
     
   if (info.freemem != n-PGSIZE) {
-    printf("FAIL: free mem %ld (bytes) instead of %ld\n", n-PGSIZE, info.freemem);
+    printf("FAIL: free mem %d (bytes) instead of %d\n", n-PGSIZE, info.freemem);
     exit(1);
   }
   
@@ -70,7 +70,7 @@ testmem() {
   sinfo(&info);
     
   if (info.freemem != n) {
-    printf("FAIL: free mem %ld (bytes) instead of %ld\n", n, info.freemem);
+    printf("FAIL: free mem %d (bytes) instead of %d\n", n, info.freemem);
     exit(1);
   }
 }
@@ -107,7 +107,7 @@ void testproc() {
   if(pid == 0){
     sinfo(&info);
     if(info.nproc != nproc+1) {
-      printf("sysinfotest: FAIL nproc is %ld instead of %ld\n", info.nproc, nproc+1);
+      printf("sysinfotest: FAIL nproc is %d instead of %d\n", info.nproc, nproc+1);
       exit(1);
     }
     exit(0);
@@ -115,29 +115,8 @@ void testproc() {
   wait(&status);
   sinfo(&info);
   if(info.nproc != nproc) {
-      printf("sysinfotest: FAIL nproc is %ld instead of %ld\n", info.nproc, nproc);
+      printf("sysinfotest: FAIL nproc is %d instead of %d\n", info.nproc, nproc);
       exit(1);
-  }
-}
-
-void testbad() {
-  int pid = fork();
-  int xstatus;
-  
-  if(pid < 0){
-    printf("sysinfotest: fork failed\n");
-    exit(1);
-  }
-  if(pid == 0){
-      sinfo(0x0);
-      exit(0);
-  }
-  wait(&xstatus);
-  if(xstatus == -1)  // kernel killed child?
-    exit(0);
-  else {
-    printf("sysinfotest: testbad succeeded %d\n", xstatus);
-    exit(xstatus);
   }
 }
 

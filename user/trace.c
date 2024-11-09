@@ -22,8 +22,6 @@ main(int argc, char *argv[])
   for(i = 2; i < argc && i < MAXARG; i++){
     nargv[i-2] = argv[i];
   }
-  nargv[argc-2] = 0;
   exec(nargv[0], nargv);
-  printf("trace: exec failed\n");
   exit(0);
 }

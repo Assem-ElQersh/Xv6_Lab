@@ -1,5 +1,3 @@
-#ifndef __ASSEMBLER__
-
 // which hart (core) is this?
 static inline uint64
 r_mhartid()
@@ -96,7 +94,9 @@ w_sie(uint64 x)
 }
 
 // Machine-mode Interrupt Enable
-#define MIE_STIE (1L << 5)  // supervisor timer
+#define MIE_MEIE (1L << 11) // external
+#define MIE_MTIE (1L << 7)  // timer
+#define MIE_MSIE (1L << 3)  // software
 static inline uint64
 r_mie()
 {
@@ -111,7 +111,7 @@ w_mie(uint64 x)
   asm volatile("csrw mie, %0" : : "r" (x));
 }
 
-// supervisor exception program counter, holds the
+// machine exception program counter, holds the
 // instruction address to which a return from
 // exception will go.
 static inline void 
@@ -174,51 +174,11 @@ r_stvec()
   return x;
 }
 
-// Supervisor Timer Comparison Register
-static inline uint64
-r_stimecmp()
-{
-  uint64 x;
-  // asm volatile("csrr %0, stimecmp" : "=r" (x) );
-  asm volatile("csrr %0, 0x14d" : "=r" (x) );
-  return x;
-}
-
+// Machine-mode interrupt vector
 static inline void 
-w_stimecmp(uint64 x)
+w_mtvec(uint64 x)
 {
-  // asm volatile("csrw stimecmp, %0" : : "r" (x));
-  asm volatile("csrw 0x14d, %0" : : "r" (x));
-}
-
-// Machine Environment Configuration Register
-static inline uint64
-r_menvcfg()
-{
-  uint64 x;
-  // asm volatile("csrr %0, menvcfg" : "=r" (x) );
-  asm volatile("csrr %0, 0x30a" : "=r" (x) );
-  return x;
-}
-
-static inline void 
-w_menvcfg(uint64 x)
-{
-  // asm volatile("csrw menvcfg, %0" : : "r" (x));
-  asm volatile("csrw 0x30a, %0" : : "r" (x));
-}
-
-// Physical Memory Protection
-static inline void
-w_pmpcfg0(uint64 x)
-{
-  asm volatile("csrw pmpcfg0, %0" : : "r" (x));
-}
-
-static inline void
-w_pmpaddr0(uint64 x)
-{
-  asm volatile("csrw pmpaddr0, %0" : : "r" (x));
+  asm volatile("csrw mtvec, %0" : : "r" (x));
 }
 
 // use riscv's sv39 page table scheme.
@@ -240,6 +200,19 @@ r_satp()
   uint64 x;
   asm volatile("csrr %0, satp" : "=r" (x) );
   return x;
+}
+
+// Supervisor Scratch register, for early trap handler in trampoline.S.
+static inline void 
+w_sscratch(uint64 x)
+{
+  asm volatile("csrw sscratch, %0" : : "r" (x));
+}
+
+static inline void 
+w_mscratch(uint64 x)
+{
+  asm volatile("csrw mscratch, %0" : : "r" (x));
 }
 
 // Supervisor Trap Cause
@@ -314,7 +287,7 @@ r_sp()
   return x;
 }
 
-// read and write tp, the thread pointer, which xv6 uses to hold
+// read and write tp, the thread pointer, which holds
 // this core's hartid (core number), the index into cpus[].
 static inline uint64
 r_tp()
@@ -346,10 +319,6 @@ sfence_vma()
   asm volatile("sfence.vma zero, zero");
 }
 
-typedef uint64 pte_t;
-typedef uint64 *pagetable_t; // 512 PTEs
-
-#endif // __ASSEMBLER__
 
 #define PGSIZE 4096 // bytes per page
 #define PGSHIFT 12  // bits of offset within a page
@@ -361,7 +330,7 @@ typedef uint64 *pagetable_t; // 512 PTEs
 #define PTE_R (1L << 1)
 #define PTE_W (1L << 2)
 #define PTE_X (1L << 3)
-#define PTE_U (1L << 4) // user can access
+#define PTE_U (1L << 4) // 1 -> user can access
 
 // shift a physical address to the right place for a PTE.
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
@@ -380,3 +349,6 @@ typedef uint64 *pagetable_t; // 512 PTEs
 // Sv39, to avoid having to sign-extend virtual addresses
 // that have the high bit set.
 #define MAXVA (1L << (9 + 9 + 9 + 12 - 1))
+
+typedef uint64 pte_t;
+typedef uint64 *pagetable_t; // 512 PTEs
