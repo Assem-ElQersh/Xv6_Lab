@@ -91,10 +91,3 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
-
-uint64 sys_trace(void) {
-    int mask;
-    argint(0, &mask);  // Fetches the argument from user space
-    myproc()->trace_mask = mask;  // Stores the bitmask in the current process
-    return 0;
-}

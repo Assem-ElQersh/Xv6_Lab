@@ -194,11 +194,6 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
-	$U/_sleep\
-	$U/_pingpong\
-	$U/_primes\
-	$U/_find\
-	$U/_xargs\
 
 
 
@@ -281,6 +276,9 @@ endif
 fs.img: mkfs/mkfs README $(UEXTRA) $(UPROGS)
 	mkfs/mkfs fs.img README $(UEXTRA) $(UPROGS)
 
+newfs.img: 
+	-mv -f fs.img fs.img.bk
+
 -include kernel/*.d user/*.d
 
 clean:
@@ -288,7 +286,7 @@ clean:
 	*/*.o */*.d */*.asm */*.sym \
 	$U/initcode $U/initcode.out $U/usys.S $U/_* \
 	$K/kernel \
-	mkfs/mkfs fs.img .gdbinit __pycache__ xv6.out* \
+	mkfs/mkfs fs.img fs.img.bk .gdbinit __pycache__ xv6.out* \
 	ph barrier
 
 # try to generate a unique GDB port
@@ -317,7 +315,12 @@ QEMUOPTS += -netdev user,id=net0,hostfwd=udp::$(FWDPORT1)-:2000,hostfwd=udp::$(F
 QEMUOPTS += -device e1000,netdev=net0,bus=pcie.0
 endif
 
-qemu: $K/kernel fs.img
+# makes a new fs.img
+qemu: newfs.img $K/kernel fs.img
+	$(QEMU) $(QEMUOPTS)
+
+# runs with existing fs.img, if present
+qemu-fs: $K/kernel fs.img
 	$(QEMU) $(QEMUOPTS)
 
 .gdbinit: .gdbinit.tmpl-riscv
